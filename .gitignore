@@ -1,0 +1,16 @@
+.specstory/
+.cursorindexingignore
+
+/node_modules
+/dist
+/build
+/coverage
+/logs
+/temp
+/cache
+/tmp
+/test
+/test-results
+/test-coverage
+/test-reports
+/test-logs

@@ -1,0 +1,4 @@
+# pnpm-workspace.yaml
+packages:
+  # 包含 packages 目录下的所有子目录
+  - "packages/*"
