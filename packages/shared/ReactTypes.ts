@@ -12,3 +12,7 @@ export interface ReactElementType {
   ref: Ref;
   _mark: string;
 }
+
+// 定义 Action type
+// this.setState(action) 或者 this.setState((prevState) => ({...prevState, ...newState}))
+export type Action<State> = State | ((prevState: State) => State);
