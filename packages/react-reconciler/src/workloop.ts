@@ -1,19 +1,38 @@
 import { beginWork } from "./beginWork";
 import { completeWork } from "./completeWork";
-import { FiberNode } from "./fiber";
+import { createWorkInProgress, FiberNode, FiberRootNode } from "./fiber";
+import { HostRoot } from "./workTags";
 
 // TODO：需要一个全局的指针，指向当时正在工作的 fiberNode 树，一般是 workInProgress
 // 指向当前工作单元的指针
 let workInProgress: FiberNode | null = null;
 
+// 调度功能
+export function scheduleUpdateOnFiber(fiber: FiberNode) {
+  const root = markUpdateFromFiberToRoot(fiber);
+  renderRoot(root);
+}
+
+// 从触发更新的节点向上遍历到 FiberRootNode
+function markUpdateFromFiberToRoot(fiber: FiberNode) {
+  let node = fiber;
+  while (node.return !== null) {
+    node = node.return;
+  }
+  if (node.tag == HostRoot) {
+    return node.stateNode;
+  }
+  return null;
+}
+
 // 用于进行初始化的操作
 function prepareFreshStack(fiber: FiberNode) {
-  workInProgress = fiber;
+  workInProgress = createWorkInProgress(fiber, {});
 }
 
 // 主要用于进行 更新的过程，那么可以推测出调用 renderRoot 应该是触发更新的 api
-function renderRoot(fiber: FiberNode) {
-  prepareFreshStack(fiber);
+function renderRoot(fiber: FiberRootNode) {
+  prepareFreshStack(fiber.current);
   do {
     try {
       workLoop();
