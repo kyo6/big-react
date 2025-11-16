@@ -1,5 +1,5 @@
-import { Props, Key, Ref } from "shared/ReactTypes";
-import { WorkTag } from "./workTags";
+import { Props, Key, Ref, ReactElementType } from "shared/ReactTypes";
+import { FunctionComponent, HostComponent, WorkTag } from "./workTags";
 import { Flags, NoFlags } from "./fiberFlags";
 import { Container } from "hostConfig"; //在tsconfig.json中配置了路径别名，因为不同的宿主环境有不同的实现，后期会单独抽离出一个包来实现不同的宿主环境
 // ReactElement 对象的每个节点都会生成与之对应的 FiberNode
@@ -28,6 +28,8 @@ export class FiberNode {
   alternate: FiberNode | null;
   // fiberNode 双缓冲树对比之后产生的标记，比如插入，移动，删除等
   flags: Flags;
+  // 表示子节点的副作用类型，如更新、插入、删除等
+  subtreeFlags: Flags;
 
   /**
    * 构造函数
@@ -56,6 +58,7 @@ export class FiberNode {
     // 用于 current Fiber树和 workInProgress Fiber树的切换（如果当时fiberNode树是current树，则alternate指向的是workInProgress树）
     this.alternate = null;
     this.flags = NoFlags; // 初始状态时表示没有任何标记（因为还没进行fiberNode对比）
+    this.subtreeFlags = NoFlags; // 表示子节点的副作用类型，如更新、插入、删除等
     this.updateQueue = null; // 更新队列
     this.memoizedState = null; // 经过reconcile之后的state
   }
@@ -116,3 +119,19 @@ export const createWorkInProgress = (
 
   return wip;
 };
+
+// 根据 DOM 节点创建新的 Fiber 节点
+export function createFiberFromElement(element: ReactElementType): FiberNode {
+  const { type, key, props } = element;
+  let fiberTag: WorkTag = FunctionComponent;
+  if (typeof type == "string") {
+    // 如: <div/> 的 type: 'div'
+    fiberTag = HostComponent;
+  } else if (typeof type !== "function" && __DEV__) {
+    console.warn("未定义的 type 类型", element);
+  }
+
+  const fiber = new FiberNode(fiberTag, props, key);
+  fiber.type = type;
+  return fiber;
+}

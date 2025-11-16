@@ -31,16 +31,23 @@ function prepareFreshStack(fiber: FiberNode) {
 }
 
 // 主要用于进行 更新的过程，那么可以推测出调用 renderRoot 应该是触发更新的 api
-function renderRoot(fiber: FiberRootNode) {
-  prepareFreshStack(fiber.current);
+function renderRoot(root: FiberRootNode) {
+  prepareFreshStack(root.current);
   do {
     try {
       workLoop();
+      break;
     } catch (error) {
-      console.error(error);
+      if (__DEV__) {
+        console.warn("workLoop发生错误：", error);
+      }
+      workInProgress = null;
     }
-  } while (workInProgress !== null);
-  return workInProgress;
+  } while (true);
+  const finishedWork = root.current.alternate;
+  root.finishedWork = finishedWork;
+  // 调度完成，执行 commitRoot
+  // commitRoot(root);
 }
 
 // 该函数用于调度和执行 FiberNode 树的更新和渲染过程
