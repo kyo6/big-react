@@ -69,7 +69,7 @@ export const commitPlacement = (finishedWork: FiberNode) => {
   }
 };
 
-export const getParentNode = (fiber: FiberNode): Container => {
+export const getParentNode = (fiber: FiberNode): Container | null => {
   let parent = fiber.return;
   while (parent !== null) {
     if (parent.tag === HostComponent) {

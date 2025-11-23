@@ -14,3 +14,4 @@
 /test-coverage
 /test-reports
 /test-logs
+**/*/node_modules

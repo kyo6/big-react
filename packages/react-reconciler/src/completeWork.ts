@@ -1,6 +1,7 @@
 import { FiberNode } from "./fiber";
 import { NoFlags } from "./fiberFlags";
 import {
+  Container,
   appendInitialChild,
   createInstance,
   createTextInstance,
@@ -54,7 +55,7 @@ export const completeWork = (workInProgress: FiberNode) => {
  * @param parent 父 FiberNode
  * @param workInProgress 当前 FiberNode
  */
-function appendAllChildren(parent: FiberNode, workInProgress: FiberNode) {
+function appendAllChildren(parent: Container, workInProgress: FiberNode) {
   let node = workInProgress.child;
   while (node !== null) {
     if (node.tag == HostComponent || node.tag == HostText) {
