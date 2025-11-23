@@ -74,11 +74,13 @@ export class FiberRootNode {
    * @param hostRootFiber 根fiberNode
    */
   constructor(container: Container, hostRootFiber: FiberNode) {
+    // 保存宿主环境挂载的节点(DomELement或者原生组件)
     this.container = container;
-    this.current = hostRootFiber;
     // 将根节点的 stateNode 属性指向 FiberRootNode，用于表示整个 React 应用的根节点
+    this.current = hostRootFiber;
+    // 把当前 FiberRootNode 实例挂载到 hostRootFiber.stateNode 上
     hostRootFiber.stateNode = this;
-    // 指向更新完成之后的 hostRootFiber
+    // 指向完成更新后的新的Fiber树的根节点
     this.finishedWork = null;
   }
 }

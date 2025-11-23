@@ -2,12 +2,36 @@ import { beginWork } from "./beginWork";
 import { completeWork } from "./completeWork";
 import { createWorkInProgress, FiberNode, FiberRootNode } from "./fiber";
 import { HostRoot } from "./workTags";
+import { MutationMask, NoFlags } from "./fiberFlags";
+import { commitMutationEffects } from "./commitWork";
 
 // TODO：需要一个全局的指针，指向当时正在工作的 fiberNode 树，一般是 workInProgress
 // 指向当前工作单元的指针
 let workInProgress: FiberNode | null = null;
 
-// 调度功能
+// 主要用于进行 更新的过程，那么可以推测出调用 renderRoot 应该是触发更新的 api
+function renderRoot(root: FiberRootNode) {
+  // 初始化，将workInProgress 指向第一个fiberNode
+  prepareFreshStack(root.current);
+  do {
+    try {
+      workLoop();
+      break;
+    } catch (error) {
+      if (__DEV__) {
+        console.warn("workLoop发生错误：", error);
+      }
+      workInProgress = null;
+    }
+  } while (true);
+  const finishedWork = root.current.alternate;
+  root.finishedWork = finishedWork;
+  // 接下来实行 react-dom下的首屏渲染流程了
+  // 从根节点开始，递归执行 commitWork
+  commitRoot(root);
+}
+
+// scheduleUpdateOnFiber主要是找到hostFiberNode, 然后开始reconciler过程。
 export function scheduleUpdateOnFiber(fiber: FiberNode) {
   const root = markUpdateFromFiberToRoot(fiber);
   renderRoot(root);
@@ -25,29 +49,38 @@ function markUpdateFromFiberToRoot(fiber: FiberNode) {
   return null;
 }
 
-// 用于进行初始化的操作
+// prepareFreshStack函数： 用于初始化当前节点的wip， 并创建alternate 的双缓存的建立。
 function prepareFreshStack(fiber: FiberNode) {
   workInProgress = createWorkInProgress(fiber, {});
 }
 
-// 主要用于进行 更新的过程，那么可以推测出调用 renderRoot 应该是触发更新的 api
-function renderRoot(root: FiberRootNode) {
-  prepareFreshStack(root.current);
-  do {
-    try {
-      workLoop();
-      break;
-    } catch (error) {
-      if (__DEV__) {
-        console.warn("workLoop发生错误：", error);
-      }
-      workInProgress = null;
-    }
-  } while (true);
-  const finishedWork = root.current.alternate;
-  root.finishedWork = finishedWork;
-  // 调度完成，执行 commitRoot
-  // commitRoot(root);
+// commitRoot函数： 用于执行 commit 阶段， 主要是执行 commitMutationEffects 函数， 然后更新 root.current 指向 finishedWork。
+function commitRoot(root: FiberRootNode) {
+  // root.finishedWork 为 workInProgress
+  const finishedWork = root.finishedWork;
+  if (finishedWork === null) {
+    return;
+  }
+  if (__DEV__) {
+    console.warn("commit阶段开始", finishedWork);
+  }
+  // 重置 finishedWork
+  root.finishedWork = null;
+  // 执行 commit 阶段
+  // 判断是否存在子阶段需要执行的操作
+  const subtreeHasEffects =
+    (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
+  const rootHasEffects = (finishedWork.flags & MutationMask) !== NoFlags;
+
+  if (subtreeHasEffects || rootHasEffects) {
+    // beforeMutation
+    // mutation Placement
+    commitMutationEffects(finishedWork);
+    root.current = finishedWork;
+    // layout
+  } else {
+    root.current = finishedWork;
+  }
 }
 
 // 该函数用于调度和执行 FiberNode 树的更新和渲染过程
@@ -59,6 +92,7 @@ function workLoop() {
 }
 
 // 在这个函数中，React 会计算 FiberNode 节点的变化，并更新 workInProgress
+// workInProgress 树构建过程是一个深度优先遍历（DFS）：
 function performUnitOfWork(fiber: FiberNode) {
   const next = beginWork(fiber);
   // 递执行完之后，需要更新下工作单元的props

@@ -5,6 +5,14 @@ import { processUpdateQueue, UpdateQueue } from "./updateQueue";
 import { HostComponent, HostRoot, HostText } from "./workTags";
 // 递归中的递阶段
 
+/**
+ * 在 beginWork() 中，会：
+ * 1.	计算新的 props / state；
+ * 2.	执行函数组件（FunctionComponent）；
+ * 3.	调用 reconcileChildren(currentFiber, newElements) 生成新的子 Fiber；
+ * 4.	形成 workInProgress 子树。
+ **/
+
 export const beginWork = (workInProgress: FiberNode) => {
   //  将当前 FiberNode 和 ReactElement 比较，返回子FiberNode
   switch (workInProgress.tag) {
@@ -36,15 +44,15 @@ function updateHostRoot(workInProgress: FiberNode) {
 
   // 为什么nextChildren是workInProgress.memoizedState？
   // 因为workInProgress.memoizedState是更新后的状态，所以需要将更新后的状态作为子节点的 ReactElement
-  const nextChildren = workInProgress.memoizedState;
-  reconcileChildren(workInProgress, nextChildren);
+  const newElements = workInProgress.memoizedState;
+  reconcileChildren(workInProgress, newElements);
   return workInProgress.child;
 }
 
 function updateHostComponent(workInProgress: FiberNode) {
   const nextProps = workInProgress.pendingProps;
-  const nextChildren = nextProps.children;
-  reconcileChildren(workInProgress, nextChildren);
+  const newElements = nextProps.children;
+  reconcileChildren(workInProgress, newElements);
   return workInProgress.child;
 }
 
@@ -53,27 +61,27 @@ function updateHostText() {
   return null;
 }
 
-// 对比子节点的 current FiberNode 与 子节点的 ReactElement
-// 生成子节点对应的 workInProgress FiberNode
+// 基于 current.child 对比生成新 Fiber
 function reconcileChildren(
   workInProgress: FiberNode,
-  nextChildren?: ReactElementType
+  newElements?: ReactElementType
 ) {
   // alternate 指向节点的备份节点，即 current
   const current = workInProgress.alternate;
   if (current !== null) {
-    // update阶段，复用 current FiberNode，更新其 props
+    // update阶段，复用 current FiberNode，更新其 props.
+    // reconcileChildFibers这个函数主要是根据wip和它的子元素的ReactElement去生成对应子fiberNode，其中current?.child为上一次渲染的值。children为子的ReactElement对象。
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current?.child,
-      nextChildren
+      newElements
     );
   } else {
     // mount
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       null,
-      nextChildren
+      newElements
     );
   }
 }
