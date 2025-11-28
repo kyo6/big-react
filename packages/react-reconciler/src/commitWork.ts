@@ -6,7 +6,6 @@ import { appendChildToContainer, Container } from "hostConfig";
 // 保存下一个需要执行的effecct 节点
 let nextEffect: FiberNode | null = null;
 
-// commitMutationEffects
 // commitMutationEffects 函数负责深度优先遍历 Fiber 树，递归地向下寻找子节点是否存在 Mutation 阶段需要执行的 flags，
 // 如果遍历到某个节点，其所有子节点都不存在 flags（即 subtreeFlags == NoFlags），则停止向下，
 // 调用 commitMutationEffectsOnFiber 处理该节点的 flags，并且开始遍历其兄弟节点和父节点。
@@ -94,7 +93,7 @@ export const appendPlacementNodeIntoContainer = (
     return;
   } else if (finishedWork.child !== null) {
     let child = finishedWork.child;
-    while (child !== null) {
+    if (child !== null) {
       appendPlacementNodeIntoContainer(child, parentNode);
       let sibling = child.sibling;
       while (sibling !== null) {

@@ -9,8 +9,7 @@ import {
 } from "shared/ReactTypes";
 
 // ReactElement
-
-export const ReactElement = function (
+const ReactElement = function (
   type: Type,
   key: Key,
   ref: Ref,
@@ -28,11 +27,78 @@ export const ReactElement = function (
   return element;
 };
 
-export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
-  // reactElement 自身的属性
+export const jsx = (type: ElementType, config: any, maybeKey: any) => {
   let key: Key = null;
-  const props: Props = {};
   let ref: Ref = null;
+  const props: Props = {};
+
+  if (maybeKey !== undefined) {
+    key = "" + maybeKey;
+  }
+
+  for (const prop in config) {
+    const val = config[prop];
+    if (prop === "key") {
+      if (val !== undefined) {
+        key = "" + val;
+      }
+      continue;
+    }
+    if (prop === "ref") {
+      if (val !== undefined) {
+        ref = val;
+      }
+      continue;
+    }
+    // 去除config原型链上的属性，只要自身
+    if ({}.hasOwnProperty.call(config, prop)) {
+      props[prop] = val;
+    }
+  }
+
+  return ReactElement(type, key, ref, props);
+};
+
+export const jsxDEV = (type: ElementType, config: any, maybeKey: any) => {
+  let key: Key = null;
+  let ref: Ref = null;
+  const props: Props = {};
+
+  if (maybeKey !== undefined) {
+    key = "" + maybeKey;
+  }
+
+  for (const prop in config) {
+    const val = config[prop];
+    if (prop === "key") {
+      if (val !== undefined) {
+        key = "" + val;
+      }
+      continue;
+    }
+    if (prop === "ref") {
+      if (val !== undefined) {
+        ref = val;
+      }
+      continue;
+    }
+    // 去除config原型链上的属性，只要自身
+    if ({}.hasOwnProperty.call(config, prop)) {
+      props[prop] = val;
+    }
+  }
+
+  return ReactElement(type, key, ref, props);
+};
+
+export const createElement = (
+  type: ElementType,
+  config: any,
+  ...maybeChildren: any
+) => {
+  let key: Key = null;
+  let ref: Ref = null;
+  const props: Props = {};
 
   for (const prop in config) {
     const val = config[prop];
@@ -66,5 +132,3 @@ export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
 
   return ReactElement(type, key, ref, props);
 };
-
-export const jsxDEV = jsx;

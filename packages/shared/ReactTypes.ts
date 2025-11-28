@@ -6,10 +6,10 @@ export type ElementType = any;
 
 export interface ReactElementType {
   $$typeof: symbol | number;
-  type: ElementType;
   key: Key;
   props: Props;
   ref: Ref;
+  type: ElementType;
   _mark: string;
 }
 

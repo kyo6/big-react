@@ -9,7 +9,10 @@ import { commitMutationEffects } from "./commitWork";
 // 指向当前工作单元的指针
 let workInProgress: FiberNode | null = null;
 
-// 主要用于进行 更新的过程，那么可以推测出调用 renderRoot 应该是触发更新的 api
+/**
+ * renderRoot函数： 主要用于进行 更新的过程，那么可以推测出调用 renderRoot 应该是触发更新的 api
+ * @param root 根节点
+ */
 function renderRoot(root: FiberRootNode) {
   // 初始化，将workInProgress 指向第一个fiberNode
   prepareFreshStack(root.current);
@@ -37,7 +40,11 @@ export function scheduleUpdateOnFiber(fiber: FiberNode) {
   renderRoot(root);
 }
 
-// 从触发更新的节点向上遍历到 FiberRootNode
+/**
+ * markUpdateFromFiberToRoot函数： 从触发更新的节点向上遍历到 FiberRootNode
+ * @param fiber 当前节点
+ * @returns FiberRootNode
+ */
 function markUpdateFromFiberToRoot(fiber: FiberNode) {
   let node = fiber;
   while (node.return !== null) {
@@ -49,12 +56,18 @@ function markUpdateFromFiberToRoot(fiber: FiberNode) {
   return null;
 }
 
-// prepareFreshStack函数： 用于初始化当前节点的wip， 并创建alternate 的双缓存的建立。
+/**
+ * prepareFreshStack函数： 用于初始化当前节点的wip， 并创建alternate 的双缓存的建立。
+ * @param fiber 当前节点
+ */
 function prepareFreshStack(fiber: FiberNode) {
   workInProgress = createWorkInProgress(fiber, {});
 }
 
-// commitRoot函数： 用于执行 commit 阶段， 主要是执行 commitMutationEffects 函数， 然后更新 root.current 指向 finishedWork。
+/**
+ * commitRoot函数： 用于执行 commit 阶段， 主要是执行 commitMutationEffects 函数， 然后更新 root.current 指向 finishedWork。
+ * @param root 根节点
+ */
 function commitRoot(root: FiberRootNode) {
   // root.finishedWork 为 workInProgress
   const finishedWork = root.finishedWork;
@@ -83,7 +96,9 @@ function commitRoot(root: FiberRootNode) {
   }
 }
 
-// 该函数用于调度和执行 FiberNode 树的更新和渲染过程
+/**
+ * workLoop函数： 用于调度和执行 FiberNode 树的更新和渲染过程
+ */
 // 该函数的作用是处理 React 程序中更新请求，计算 FiberNode 树中的每个节点的变化，并把这些变化同步到浏览器的DOM中
 function workLoop() {
   while (workInProgress !== null) {
@@ -91,7 +106,10 @@ function workLoop() {
   }
 }
 
-// 在这个函数中，React 会计算 FiberNode 节点的变化，并更新 workInProgress
+/**
+ * performUnitOfWork函数： 用于调度和执行 FiberNode 树的更新和渲染过程
+ * @param fiber 当前节点
+ */
 // workInProgress 树构建过程是一个深度优先遍历（DFS）：
 function performUnitOfWork(fiber: FiberNode) {
   const next = beginWork(fiber);
@@ -108,17 +126,18 @@ function performUnitOfWork(fiber: FiberNode) {
 
 // 主要进行归的过程，向上遍历父节点以及兄弟，更新它们节点的变化，并更新 workInProgress
 function completeUnitOfWork(fiber: FiberNode) {
-  let node = fiber;
-  while (node !== null) {
+  let node: FiberNode | null = fiber;
+  do {
+    // 归：没有子节点之后开始向上遍历父节点
     completeWork(node);
-    if (node.sibling !== null) {
-      workInProgress = node.sibling;
+    const sibling = node.sibling;
+    if (sibling !== null) {
+      // 有兄弟节点时，将指针指到兄弟节点
+      workInProgress = sibling;
       return;
-    } else if (node.return !== null) {
-      node = node.return;
-      workInProgress = node;
-    } else {
-      workInProgress = null;
     }
-  }
+    // 兄弟节点不存在时，递归应该继续往上指到父亲节点
+    node = node.return;
+    workInProgress = node;
+  } while (node !== null);
 }
