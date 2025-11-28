@@ -1,8 +1,14 @@
 import { ReactElementType } from "shared/ReactTypes";
-import { reconcileChildFibers } from "./childFiber";
+import { reconcileChildFibers, mountChildFibers } from "./childFiber";
 import { FiberNode } from "./fiber";
 import { processUpdateQueue, UpdateQueue } from "./updateQueue";
-import { HostComponent, HostRoot, HostText } from "./workTags";
+import {
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+} from "./workTags";
+import { renderWithHooks } from "./fiberHooks";
 // 递归中的递阶段
 
 /**
@@ -22,6 +28,8 @@ export const beginWork = (workInProgress: FiberNode) => {
       return updateHostComponent(workInProgress);
     case HostText:
       return updateHostText();
+    case FunctionComponent:
+      return updateFunctionComponent(workInProgress);
     default:
       if (__DEV__) {
         console.warn("beginWork 未实现的类型", workInProgress.tag);
@@ -50,8 +58,10 @@ function updateHostRoot(workInProgress: FiberNode) {
 }
 
 function updateHostComponent(workInProgress: FiberNode) {
+  console.log("workInProgress", workInProgress);
   const nextProps = workInProgress.pendingProps;
   const newElements = nextProps.children;
+  console.log("nextProps", nextProps, "newElements", newElements);
   reconcileChildren(workInProgress, newElements);
   return workInProgress.child;
 }
@@ -78,10 +88,12 @@ function reconcileChildren(
     );
   } else {
     // mount
-    workInProgress.child = reconcileChildFibers(
-      workInProgress,
-      null,
-      newElements
-    );
+    workInProgress.child = mountChildFibers(workInProgress, null, newElements);
   }
+}
+
+function updateFunctionComponent(workInProgress: FiberNode) {
+  const nextChildren = renderWithHooks(workInProgress);
+  reconcileChildren(workInProgress, nextChildren);
+  return workInProgress.child;
 }

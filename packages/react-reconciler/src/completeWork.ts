@@ -6,7 +6,12 @@ import {
   createInstance,
   createTextInstance,
 } from "hostConfig";
-import { HostComponent, HostRoot, HostText } from "./workTags";
+import {
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+} from "./workTags";
 
 export const completeWork = (workInProgress: FiberNode) => {
   // 递归中的归
@@ -14,6 +19,9 @@ export const completeWork = (workInProgress: FiberNode) => {
   const current = workInProgress.alternate;
   switch (workInProgress.tag) {
     case HostRoot:
+      bubbleProperties(workInProgress);
+      return null;
+    case FunctionComponent:
       bubbleProperties(workInProgress);
       return null;
     case HostComponent:
