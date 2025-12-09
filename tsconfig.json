@@ -19,7 +19,9 @@
       "skipLibCheck": true,
       "baseUrl": "./packages",
       "paths": {
-        "hostConfig": ["./react-dom/src/hostConfig.ts"]
+        "hostConfig": ["./react-dom/src/hostConfig.ts"],
+        "react": ["./react/src/index.ts"],
+        "react-dom": ["./react-dom/src/index.ts"]
       }
     }
   }

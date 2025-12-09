@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
 
 const App = () => {
-  return <div>Hello World</div>;
+  const [count, setCount] = useState(1);
+  return (
+    <div>
+      <p>{count}</p>
+    </div>
+  );
 };
 
 const jsx = (
@@ -15,4 +20,4 @@ console.log(jsx);
 console.log(<App />);
 console.log(React);
 
-ReactDOM.createRoot(document.getElementById("root")!).render(jsx);
+ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
