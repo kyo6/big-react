@@ -2,7 +2,7 @@ import currentDispatcher, {
   Dispatcher,
   resolveDispatcher,
 } from "./src/currentDispatcher";
-import { createElement } from "./src/jsx";
+export { createElement, isValidElement } from "./src/jsx";
 
 export const useState: Dispatcher["useState"] = (initialState) => {
   const dispatcher = resolveDispatcher();
@@ -14,8 +14,5 @@ export const __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = {
   currentDispatcher,
 };
 
-// 定义 react 包的相关数据
-export default {
-  version: "0.0.0",
-  createElement,
-};
+export const version = "1.0.0";
+// export const createElement;
