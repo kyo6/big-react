@@ -1,5 +1,5 @@
 import { FiberNode } from "./fiber";
-import { NoFlags } from "./fiberFlags";
+import { NoFlags, Update } from "./fiberFlags";
 import {
   Container,
   appendInitialChild,
@@ -26,7 +26,8 @@ export const completeWork = (workInProgress: FiberNode) => {
       return null;
     case HostComponent:
       if (current !== null && workInProgress.stateNode) {
-        // TODO: 组件的更新阶段
+        // 组件的更新阶段
+        updateHostComponent(current, workInProgress);
       } else {
         // 首屏渲染阶段
         // 构建 DOM
@@ -39,7 +40,8 @@ export const completeWork = (workInProgress: FiberNode) => {
       return null;
     case HostText:
       if (current !== null && workInProgress.stateNode) {
-        // TODO: 组件的更新阶段
+        // 组件的更新阶段
+        updateHostText(current, workInProgress);
       } else {
         // 首屏渲染阶段
         // 构建 DOM
@@ -57,6 +59,23 @@ export const completeWork = (workInProgress: FiberNode) => {
       return null;
   }
 };
+
+function updateHostText(current: FiberNode, workInProgress: FiberNode) {
+  const oldText = current.memoizedProps.content;
+  const newText = workInProgress.pendingProps.content;
+  if (oldText !== newText) {
+    markUpdate(workInProgress);
+  }
+}
+
+function updateHostComponent(current: FiberNode, workInProgress: FiberNode) {
+  markUpdate(workInProgress);
+}
+
+// 为 Fiber 节点增加 Update flags
+function markUpdate(workInProgress: FiberNode) {
+  workInProgress.flags |= Update;
+}
 
 /**
  * 将子 FiberNode 的 DOM 节点插入到父 FiberNode 的 DOM 节点中

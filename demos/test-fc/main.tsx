@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 
 const App = () => {
   const [count, setCount] = useState(1);
+  // @ts-ignore
+  window.setCount = setCount;
   return (
     <div>
       <p>{count}</p>

@@ -30,6 +30,7 @@ export class FiberNode {
   flags: Flags;
   // 表示子节点的副作用类型，如更新、插入、删除等
   subtreeFlags: Flags;
+  deletions: Array<FiberNode> | null;
 
   /**
    * 构造函数
@@ -61,6 +62,7 @@ export class FiberNode {
     this.subtreeFlags = NoFlags; // 表示子节点的副作用类型，如更新、插入、删除等
     this.updateQueue = null; // 更新队列
     this.memoizedState = null; // 经过reconcile之后的state
+    this.deletions = null; // 需要删除的子节点
   }
 }
 

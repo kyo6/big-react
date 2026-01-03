@@ -1,7 +1,23 @@
 import { FiberNode, FiberRootNode } from "./fiber";
-import { MutationMask, NoFlags, Placement } from "./fiberFlags";
-import { HostComponent, HostRoot, HostText } from "./workTags";
-import { appendChildToContainer, Container } from "hostConfig";
+import {
+  MutationMask,
+  NoFlags,
+  Placement,
+  Update,
+  ChildDeletion,
+} from "./fiberFlags";
+import {
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+} from "./workTags";
+import {
+  appendChildToContainer,
+  Container,
+  commitUpdate,
+  removeChild,
+} from "hostConfig";
 
 // 保存下一个需要执行的effecct 节点
 let nextEffect: FiberNode | null = null;
@@ -52,6 +68,19 @@ export const commitMutationEffectsOnFiber = (finishedWork: FiberNode) => {
     // flags Update
     // flags ChildDeletion
   }
+  if ((flags & Update) !== NoFlags) {
+    commitUpdate(finishedWork);
+    finishedWork.flags &= ~Update;
+  }
+  if ((flags & ChildDeletion) !== NoFlags) {
+    const deletions = finishedWork.deletions;
+    if (deletions !== null) {
+      deletions.forEach((childToDelete) => {
+        commitDeletion(childToDelete);
+      });
+    }
+    finishedWork.flags &= ~ChildDeletion;
+  }
 };
 
 // commitPlacement 函数主要用来完成真实的dom节点的插入、删除和更新等操作。
@@ -68,6 +97,7 @@ export const commitPlacement = (finishedWork: FiberNode) => {
   }
 };
 
+// 获取 parent DOM
 export const getParentNode = (fiber: FiberNode): Container | null => {
   let parent = fiber.return;
   while (parent !== null) {
@@ -101,5 +131,78 @@ export const appendPlacementNodeIntoContainer = (
         sibling = sibling.sibling;
       }
     }
+  }
+};
+
+// 删除节点及其子树
+const commitDeletion = (childToDelete: FiberNode) => {
+  if (__DEV__) {
+    console.log("执行 Deletion 操作", childToDelete);
+  }
+
+  // 子树的根节点
+  let rootHostNode: FiberNode | null = null;
+  // 递归子树
+  commitNestedComponent(childToDelete, (unmountFiber) => {
+    switch (unmountFiber.tag) {
+      case HostComponent:
+        if (rootHostNode === null) {
+          rootHostNode = unmountFiber;
+        }
+        // TODO: 解绑ref
+        return;
+      case HostText:
+        if (rootHostNode === null) {
+          rootHostNode = unmountFiber;
+        }
+        return;
+      case FunctionComponent:
+        // TODO: useEffect unmount 解绑ref
+        return;
+      default:
+        if (__DEV__) {
+          console.warn("未处理的unmount类型", unmountFiber);
+        }
+        break;
+    }
+  });
+  // 移除rootHostNode的DOM
+  if (rootHostNode !== null) {
+    const hostParent = getParentNode(childToDelete);
+    if (hostParent !== null) {
+      removeChild((rootHostNode as FiberNode).stateNode, hostParent);
+    }
+  }
+
+  childToDelete.return = null;
+  childToDelete.child = null;
+};
+
+// 深度优先遍历 Fiber 树，执行 onCommitUnmount
+const commitNestedComponent = (
+  root: FiberNode,
+  onCommitUnmount: (unmountFiber: FiberNode) => void
+) => {
+  let node = root;
+  while (true) {
+    onCommitUnmount(node);
+
+    // 向下遍历，递
+    if (node.child !== null) {
+      node.child.return = node;
+      node = node.child;
+      continue;
+    }
+    // 终止条件
+    if (node === root) return;
+
+    // 向上遍历，归
+    while (node.sibling === null) {
+      // 终止条件
+      if (node.return == null || node.return == root) return;
+      node = node.return;
+    }
+    node.sibling.return = node.return;
+    node = node.sibling;
   }
 };
