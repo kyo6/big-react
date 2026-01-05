@@ -1,4 +1,5 @@
 import { ReactElementType } from "shared/ReactTypes";
+import { initEvent } from "./SyntheticEvent";
 // ReactDOM.createRoot(root).render(<App />);
 
 import {
@@ -12,6 +13,7 @@ export function createRoot(container: Container) {
 
   return {
     render(element: ReactElementType) {
+      initEvent(container, "click");
       return updateContainer(element, root);
     },
   };

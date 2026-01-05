@@ -2,14 +2,10 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
 
 const App = () => {
-  const [count, setCount] = useState(1);
   // @ts-ignore
-  window.setCount = setCount;
-  return (
-    <div>
-      <p>{count}</p>
-    </div>
-  );
+  const [count, setCount] = useState(1210);
+  return <div onClick={() => setCount(count + 1)} >{count}</div>
+
 };
 
 const jsx = (
@@ -18,8 +14,8 @@ const jsx = (
   </div>
 );
 
-console.log(jsx);
-console.log(<App />);
-console.log(React);
+// console.log(jsx);
+// console.log(<App />);
+
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<App />);

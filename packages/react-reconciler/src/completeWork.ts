@@ -12,6 +12,7 @@ import {
   HostRoot,
   HostText,
 } from "./workTags";
+import { updateFiberProps } from "react-dom/src/SyntheticEvent";
 
 export const completeWork = (workInProgress: FiberNode) => {
   // 递归中的归
@@ -69,7 +70,12 @@ function updateHostText(current: FiberNode, workInProgress: FiberNode) {
 }
 
 function updateHostComponent(current: FiberNode, workInProgress: FiberNode) {
-  markUpdate(workInProgress);
+  const oldProps = current.memoizedProps;
+  const newProps = workInProgress.pendingProps;
+  if (oldProps !== newProps) {
+    markUpdate(workInProgress);
+  }
+  updateFiberProps(workInProgress.stateNode, newProps);
 }
 
 // 为 Fiber 节点增加 Update flags
