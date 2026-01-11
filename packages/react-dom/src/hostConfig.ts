@@ -29,6 +29,14 @@ export const appendInitialChild = (
   parent.appendChild(child);
 };
 
+export const insertChildToContainer = (
+  child: Instance,
+  container: Container,
+  before: Instance
+) => {
+  container.insertBefore(child, before);
+};
+
 export const appendChildToContainer = appendInitialChild;
 export const commitUpdate = (fiber: FiberNode) => {
   if (__DEV__) {

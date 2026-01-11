@@ -14,7 +14,9 @@ import {
 } from "./workTags";
 import {
   appendChildToContainer,
+  insertChildToContainer,
   Container,
+  Instance,
   commitUpdate,
   removeChild,
 } from "hostConfig";
@@ -91,14 +93,56 @@ export const commitPlacement = (finishedWork: FiberNode) => {
   // 需要获取 parentFiber Dom节点
   // 需要获取 finishedWork Dom节点
   // parentDom 插入 finishWork对应的dom
-  const parentNode = getParentNode(finishedWork);
-  if (parentNode !== null) {
-    appendPlacementNodeIntoContainer(finishedWork, parentNode);
+  const hostParent = getHostParent(finishedWork);
+  // host sibling
+  const sibling = getHostSibling(finishedWork);
+
+  if (hostParent !== null) {
+    appendPlacementNodeIntoContainer(finishedWork, hostParent);
+  }
+};
+
+// 获取兄弟 Host 节点
+const getHostSibling = (fiber: FiberNode) => {
+  let node: FiberNode = fiber;
+  findSibling: while (true) {
+    // 没有兄弟节点时，向上遍历
+    while (node.sibling == null) {
+      const parent = node.return;
+      if (
+        parent == null ||
+        parent.tag == HostComponent ||
+        parent.tag == HostRoot
+      ) {
+        return null;
+      }
+      node = parent;
+    }
+
+    // 向下遍历
+    node.sibling.return = node.return;
+    node = node.sibling;
+    while (node.tag !== HostText && node.tag !== HostComponent) {
+      // 不稳定的 Host 节点不能作为目标兄弟 Host 节点
+      if ((node.flags & Placement) !== NoFlags) {
+        continue findSibling;
+      }
+      if (node.child == null) {
+        continue findSibling;
+      } else {
+        node.child.return = node;
+        node = node.child;
+      }
+    }
+
+    if ((node.flags & Placement) == NoFlags) {
+      return node.stateNode;
+    }
   }
 };
 
 // 获取 parent DOM
-export const getParentNode = (fiber: FiberNode): Container | null => {
+export const getHostParent = (fiber: FiberNode): Container | null => {
   let parent = fiber.return;
   while (parent !== null) {
     if (parent.tag === HostComponent) {
@@ -114,20 +158,26 @@ export const getParentNode = (fiber: FiberNode): Container | null => {
   return null;
 };
 
-export const appendPlacementNodeIntoContainer = (
+const appendPlacementNodeIntoContainer = (
   finishedWork: FiberNode,
-  parentNode: Container
+  hostParent: Container,
+  before?: Instance
 ) => {
   if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
-    appendChildToContainer(parentNode, finishedWork.stateNode);
-    return;
-  } else if (finishedWork.child !== null) {
-    let child = finishedWork.child;
+    if (before) {
+      // 执行移动操作
+      insertChildToContainer(finishedWork.stateNode, hostParent, before);
+    } else {
+      // 执行插入操作
+      appendChildToContainer(finishedWork.stateNode, hostParent);
+    }
+  } else {
+    const child = finishedWork.child;
     if (child !== null) {
-      appendPlacementNodeIntoContainer(child, parentNode);
+      appendPlacementNodeIntoContainer(child, hostParent);
       let sibling = child.sibling;
       while (sibling !== null) {
-        appendPlacementNodeIntoContainer(sibling, parentNode);
+        appendPlacementNodeIntoContainer(sibling, hostParent);
         sibling = sibling.sibling;
       }
     }
@@ -168,7 +218,7 @@ const commitDeletion = (childToDelete: FiberNode) => {
   });
   // 移除rootHostNode的DOM
   if (rootHostNode !== null) {
-    const hostParent = getParentNode(childToDelete);
+    const hostParent = getHostParent(childToDelete);
     if (hostParent !== null) {
       removeChild((rootHostNode as FiberNode).stateNode, hostParent);
     }
